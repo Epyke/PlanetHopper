@@ -35,12 +35,10 @@ namespace TempleRun
 
             for (int i = 0; i < tileStartCount; i++)
             {
-                SpawnTile(startingTile.GetComponent<Tile>(), false);
+                SpawnTile(startingTile.GetComponent<Tile>());
             }
 
-            SpawnTile(turnTiles[0].GetComponent<Tile>());
-            AddNewDirection(Vector3.left);
-            //SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>());
+            SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>());
         }
 
         private void SpawnTile(Tile tile, bool spawnObstacle = false)
@@ -49,13 +47,15 @@ namespace TempleRun
 
             prevTile = GameObject.Instantiate(tile.gameObject, currentTileLocation, newTileRotation);
             currentTiles.Add(prevTile);
+
+            if (spawnObstacle) SpawnObstacle();
+
             // (3,4,5) * (0,0,1) => (0,0,5)
             if (tile.type == TileType.STRAIGHT)
             {
                 currentTileLocation += Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size, currentTileDirection);
             }
         }
-
 
         private void DeletePreviousTiles()
         {
@@ -64,6 +64,13 @@ namespace TempleRun
                 GameObject tile = currentTiles[0];
                 currentTiles.RemoveAt(0);
                 Destroy(tile);
+            }
+
+            while (currentObstacles.Count != 0)
+            {
+                GameObject obstacle = currentObstacles[0];
+                currentObstacles.RemoveAt(0);
+                Destroy(obstacle);
             }
         }
 
@@ -91,6 +98,18 @@ namespace TempleRun
             }
 
             SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>(), false);
+        }
+
+        private void SpawnObstacle()
+        {
+            if (Random.value > 0.2f) return;
+
+            GameObject obstaclePrefab = SelectRandomGameObjectFromList(obstacles);
+
+            Quaternion newObjectRotation = obstaclePrefab.transform.rotation * Quaternion.LookRotation(currentTileDirection, Vector3.up);
+
+            GameObject obstacle = Instantiate(obstaclePrefab, currentTileLocation, newObjectRotation);
+            currentObstacles.Add(obstacle);
         }
 
         private GameObject SelectRandomGameObjectFromList(List<GameObject> list)
