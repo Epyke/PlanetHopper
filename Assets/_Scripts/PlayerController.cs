@@ -24,6 +24,10 @@ namespace TempleRun.Player
         private LayerMask turnLayer;
         [SerializeField]
         private UnityEvent<Vector3> turnEvent;
+        [SerializeField]
+        private AnimationClip slideAnimationClip;
+        [SerializeField]
+        private Animator animator;
         private float playerSpeed;
         private float gravity;
         private Vector3 movementDirection = Vector3.forward;
@@ -34,16 +38,17 @@ namespace TempleRun.Player
         private InputAction slideAction;
 
         private CharacterController controller;
-
+        private bool sliding = false;
+        private int slidingAnimationId;
 
         private void Awake()
         {
             playerInput = GetComponent<PlayerInput>();
             controller = GetComponent<CharacterController>();
+            slidingAnimationId = Animator.StringToHash("Sliding");
             turnAction = playerInput.actions["Turn"];
             jumpAction = playerInput.actions["Jump"];
             slideAction = playerInput.actions["Slide"];
-
             gravity = initialGravityValue;
         }
 
@@ -111,7 +116,27 @@ namespace TempleRun.Player
 
         private void PlayerSlide(InputAction.CallbackContext context)
         {
+            if (!sliding && isGrounded())
+            {
+                StartCoroutine(Slide());
+            }
+        }
 
+        private IEnumerator Slide()
+        {
+            sliding = true;
+            Vector3 originalControllerCenter = controller.center;
+            Vector3 newControllerCenter = originalControllerCenter;
+            controller.height /= 2;
+            newControllerCenter.y -= controller.height / 2;
+            controller.center = newControllerCenter;
+
+            animator.Play(slidingAnimationId);
+            yield return new WaitForSeconds(slideAnimationClip.length);
+
+            controller.height *= 2;
+            controller.center = originalControllerCenter;
+            sliding = false;
         }
         private void PlayerJump(InputAction.CallbackContext context)
         {
@@ -144,8 +169,8 @@ namespace TempleRun.Player
             raycastOriginFirst -= transform.forward * .2f;
             raycastOriginSecond += transform.forward * .2f;
 
-            Debug.DrawLine(raycastOriginFirst, Vector3.down, Color.green, .2f);
-            Debug.DrawLine(raycastOriginSecond, Vector3.down, Color.red, .2f);
+            //Debug.DrawLine(raycastOriginFirst, Vector3.down, Color.green, .2f);
+            //Debug.DrawLine(raycastOriginSecond, Vector3.down, Color.red, .2f);
 
             if (Physics.Raycast(raycastOriginFirst, Vector3.down, out RaycastHit hit, length, groundLayer) || Physics.Raycast(raycastOriginSecond, Vector3.down, out RaycastHit hit2, length, groundLayer))
             {
