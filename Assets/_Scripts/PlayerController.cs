@@ -10,7 +10,7 @@ namespace TempleRun.Player
     public class PlayerController : MonoBehaviour
     {
         [SerializeField]
-        private float initialPlayerSpeed = 4f;
+        private float initialPlayerSpeed = 10f;
         [SerializeField]
         private float maximumPlayerSpeed = 30f;
         [SerializeField]
