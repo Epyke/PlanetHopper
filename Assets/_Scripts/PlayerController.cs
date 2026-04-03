@@ -171,6 +171,8 @@ namespace TempleRun.Player
             score += scoreMultiplier * Time.deltaTime;
             scoreUpdateEvent.Invoke((int)score);
 
+            animator.SetBool("isGrounded", isGrounded());
+
             controller.Move(transform.forward * playerSpeed * Time.deltaTime);
 
             if (isGrounded() && playerVelocity.y < 0)
