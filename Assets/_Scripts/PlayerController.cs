@@ -53,7 +53,8 @@ namespace TempleRun.Player
         private bool sliding = false;
         private int slidingAnimationId;
         private float score = 0;
-
+        private Vector3 lastTurnPosition;
+        private float accumulatedDistance = 0f;
         private void Awake()
         {
             playerInput = GetComponent<PlayerInput>();
@@ -83,6 +84,8 @@ namespace TempleRun.Player
         {
             playerSpeed = initialPlayerSpeed;
             gravity = initialGravityValue;
+            lastTurnPosition = transform.position;
+            accumulatedDistance = 0f;
         }
 
         private void PlayerTurn(InputAction.CallbackContext context)
@@ -119,6 +122,9 @@ namespace TempleRun.Player
         private void Turn(float turnValue, Vector3 turnPosition)
         {
             Vector3 tempPlayerPosition = new Vector3(turnPosition.x, transform.position.y, turnPosition.z);
+
+            accumulatedDistance += Vector3.Distance(lastTurnPosition, tempPlayerPosition);
+
             controller.enabled = false;
             transform.position = tempPlayerPosition;
             controller.enabled = true;
@@ -126,6 +132,8 @@ namespace TempleRun.Player
             Quaternion targetRotation = transform.rotation * Quaternion.Euler(0, 90 * turnValue, 0);
             transform.rotation = targetRotation;
             movementDirection = transform.forward.normalized;
+
+            lastTurnPosition = transform.position;
         }
 
         private void PlayerSlide(InputAction.CallbackContext context)
@@ -168,7 +176,11 @@ namespace TempleRun.Player
             }
 
             // Score
-            score += scoreMultiplier * Time.deltaTime;
+            //score += scoreMultiplier * Time.deltaTime;
+
+
+            //New score system
+            score = accumulatedDistance + Vector3.Distance(lastTurnPosition, transform.position);
             scoreUpdateEvent.Invoke((int)score);
 
             animator.SetBool("isGrounded", isGrounded());
