@@ -39,6 +39,8 @@ namespace TempleRun.Player
         private LayerMask obstacleLayer;
         [SerializeField]
         private float scoreMultiplier = 10f;
+        [SerializeField]
+        private Transform characterMesh;
         private float gravity;
         private Vector3 movementDirection = Vector3.forward;
         private Vector3 playerVelocity;
@@ -56,7 +58,7 @@ namespace TempleRun.Player
         {
             playerInput = GetComponent<PlayerInput>();
             controller = GetComponent<CharacterController>();
-            slidingAnimationId = Animator.StringToHash("Sliding");
+            slidingAnimationId = Animator.StringToHash("Armature|Slide");
             turnAction = playerInput.actions["Turn"];
             jumpAction = playerInput.actions["Jump"];
             slideAction = playerInput.actions["Slide"];
@@ -145,7 +147,6 @@ namespace TempleRun.Player
 
             animator.Play(slidingAnimationId);
             yield return new WaitForSeconds(slideAnimationClip.length / animator.speed);
-
             controller.height *= 2;
             controller.center = originalControllerCenter;
             sliding = false;
@@ -169,6 +170,8 @@ namespace TempleRun.Player
             // Score
             score += scoreMultiplier * Time.deltaTime;
             scoreUpdateEvent.Invoke((int)score);
+
+            animator.SetBool("isGrounded", isGrounded());
 
             controller.Move(transform.forward * playerSpeed * Time.deltaTime);
 
