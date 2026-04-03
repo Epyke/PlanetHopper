@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine.InputSystem;
 using UnityEngine.Events;
 using UnityEditor.ShaderKeywordFilter;
+using LootLocker.Extension.DataTypes;
 namespace TempleRun.Player
 {
 
@@ -37,8 +38,8 @@ namespace TempleRun.Player
         private Animator animator;
         [SerializeField]
         private LayerMask obstacleLayer;
-        [SerializeField]
-        private float scoreMultiplier = 10f;
+        //[SerializeField]
+        //private float scoreMultiplier = 10f;
         [SerializeField]
         private Transform characterMesh;
         private float gravity;
@@ -55,6 +56,8 @@ namespace TempleRun.Player
         private float score = 0;
         private Vector3 lastTurnPosition;
         private float accumulatedDistance = 0f;
+        public float laneDistance = 4f; // Distance between each lane
+        private int desiredLane = 1;
         private void Awake()
         {
             playerInput = GetComponent<PlayerInput>();
@@ -90,15 +93,27 @@ namespace TempleRun.Player
 
         private void PlayerTurn(InputAction.CallbackContext context)
         {
+            float swipeDirection = context.ReadValue<float>();
             Vector3? turnPosition = CheckTurn(context.ReadValue<float>());
-            if (!turnPosition.HasValue)
+            if (turnPosition.HasValue)
             {
-                GameOver();
-                return;
+                Vector3 targetDirection = Quaternion.AngleAxis(90 * context.ReadValue<float>(), Vector3.up) * movementDirection;
+                turnEvent.Invoke(targetDirection);
+                Turn(context.ReadValue<float>(), turnPosition.Value);
             }
-            Vector3 targetDirection = Quaternion.AngleAxis(90 * context.ReadValue<float>(), Vector3.up) * movementDirection;
-            turnEvent.Invoke(targetDirection);
-            Turn(context.ReadValue<float>(), turnPosition.Value);
+            else
+            {
+                if (swipeDirection < 0)
+                {
+                    desiredLane--;
+                }
+                else if (swipeDirection > 0)
+                {
+                    desiredLane++;
+                }
+
+                desiredLane = Mathf.Clamp(desiredLane, 0, 2);
+            }
         }
 
         private Vector3? CheckTurn(float turnValue)
@@ -175,9 +190,26 @@ namespace TempleRun.Player
                 return;
             }
 
+            // 1. Calculate standard forward movement
+            Vector3 forwardMove = transform.forward * playerSpeed * Time.deltaTime;
+
+            // A much simpler way for your specific character controller setup:
+            // Determine what the target offset should be (-2.5, 0, or 2.5)
+            float targetOffset = (desiredLane - 1) * laneDistance;
+
+            // Find our current offset from the center of the path
+            // We use Vector3.Dot to find how far we are along our local "Right" axis
+            float currentOffset = Vector3.Dot(transform.position - lastTurnPosition, transform.right);
+
+            // Calculate how much we need to move sideways this frame to get to the target lane smoothly
+            float laneMoveDelta = (targetOffset - currentOffset) * 10f * Time.deltaTime;
+            Vector3 sideMove = transform.right * laneMoveDelta;
+
+            // 3. Combine forward movement, side movement, and gravity
+            Vector3 finalMovement = forwardMove + sideMove + (Vector3.up * playerVelocity.y * Time.deltaTime);
+
             // Score
             //score += scoreMultiplier * Time.deltaTime;
-
 
             //New score system
             score = accumulatedDistance + Vector3.Distance(lastTurnPosition, transform.position);
@@ -185,7 +217,7 @@ namespace TempleRun.Player
 
             animator.SetBool("isGrounded", isGrounded());
 
-            controller.Move(transform.forward * playerSpeed * Time.deltaTime);
+            controller.Move(finalMovement);
 
             if (isGrounded() && playerVelocity.y < 0)
             {
@@ -193,7 +225,7 @@ namespace TempleRun.Player
             }
 
             playerVelocity.y += gravity * Time.deltaTime;
-            controller.Move(playerVelocity * Time.deltaTime);
+            //controller.Move(playerVelocity * Time.deltaTime);
 
             if (playerSpeed < maximumPlayerSpeed)
             {

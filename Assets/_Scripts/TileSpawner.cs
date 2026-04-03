@@ -89,11 +89,11 @@ namespace TempleRun
             Vector3 tilePlacementScale;
             if (prevTile.GetComponent<Tile>().type == TileType.SIDEWAYS)
             {
-                tilePlacementScale = Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size / 2 + (Vector3.one * startingTile.GetComponent<BoxCollider>().size.z / 2), currentTileDirection);
+                tilePlacementScale = Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size / 2 + (Vector3.one * startingTile.GetComponent<Renderer>().bounds.size.z / 2), currentTileDirection);
             }
             else
             {
-                tilePlacementScale = Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size - (Vector3.one * 2) + (Vector3.one * startingTile.GetComponent<BoxCollider>().size.z / 2), currentTileDirection);
+                tilePlacementScale = Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size - (Vector3.one * 2) + (Vector3.one * startingTile.GetComponent<Renderer>().bounds.size.z / 2), currentTileDirection);
             }
 
             currentTileLocation += tilePlacementScale;
