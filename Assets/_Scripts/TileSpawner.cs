@@ -7,7 +7,7 @@ namespace TempleRun
     public class TileSpawner : MonoBehaviour
     {
         [SerializeField]
-        private int tileStartCount = 10;
+        private int tileStartCount = 3;
         [SerializeField]
         private int minimumStraightTiles = 3;
         [SerializeField]
@@ -35,13 +35,20 @@ namespace TempleRun
 
             for (int i = 0; i < tileStartCount; i++)
             {
-                SpawnTile(startingTile.GetComponent<Tile>());
+                if (i < 3)
+                {
+                    SpawnTile(startingTile.GetComponent<Tile>(), false);
+                }
+                else
+                {
+                    SpawnTile(startingTile.GetComponent<Tile>(), true);
+                }
             }
 
-            SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>());
+            SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>(), true);
         }
 
-        private void SpawnTile(Tile tile, bool spawnObstacle = false)
+        private void SpawnTile(Tile tile, bool spawnObstacle)
         {
             Quaternion newTileRotation = tile.gameObject.transform.rotation * Quaternion.LookRotation(currentTileDirection, Vector3.up);
 
@@ -94,7 +101,8 @@ namespace TempleRun
             int currenPathLength = Random.Range(minimumStraightTiles, maximumStraightTiles);
             for (int i = 0; i < currenPathLength; ++i)
             {
-                SpawnTile(startingTile.GetComponent<Tile>(), (i == 0) ? false : true);
+
+                SpawnTile(startingTile.GetComponent<Tile>(), (i == 0 | i == currenPathLength - 1) ? false : true);
             }
 
             SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>(), false);
@@ -102,7 +110,7 @@ namespace TempleRun
 
         private void SpawnObstacle()
         {
-            if (Random.value > 0.2f) return;
+            if (Random.value > 0.5f) return;
 
             GameObject obstaclePrefab = SelectRandomGameObjectFromList(obstacles);
 
