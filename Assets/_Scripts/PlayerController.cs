@@ -42,6 +42,10 @@ namespace TempleRun.Player
         //private float scoreMultiplier = 10f;
         [SerializeField]
         private Transform characterMesh;
+        [SerializeField]
+        private float laneChangeDebounceDuration = 0.2f;
+        private float laneChangeCooldown = 0f;
+
         private float gravity;
         private Vector3 movementDirection = Vector3.forward;
         private Vector3 playerVelocity;
@@ -95,14 +99,21 @@ namespace TempleRun.Player
         {
             float swipeDirection = context.ReadValue<float>();
             Vector3? turnPosition = CheckTurn(context.ReadValue<float>());
+
             if (turnPosition.HasValue)
             {
+                if (!isGrounded()) return;
+
                 Vector3 targetDirection = Quaternion.AngleAxis(90 * context.ReadValue<float>(), Vector3.up) * movementDirection;
                 turnEvent.Invoke(targetDirection);
                 Turn(context.ReadValue<float>(), turnPosition.Value);
             }
             else
             {
+                if (sliding) return;
+
+                if (laneChangeCooldown > 0f) return;
+
                 if (swipeDirection < 0)
                 {
                     desiredLane--;
@@ -113,12 +124,13 @@ namespace TempleRun.Player
                 }
 
                 desiredLane = Mathf.Clamp(desiredLane, 0, 2);
+                laneChangeCooldown = laneChangeDebounceDuration;
             }
         }
 
         private Vector3? CheckTurn(float turnValue)
         {
-            Collider[] hitColliders = Physics.OverlapSphere(transform.position, .1f, turnLayer);
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, 1f, turnLayer);
             if (hitColliders.Length != 0)
             {
                 Tile tile = hitColliders[0].transform.parent.GetComponent<Tile>();
@@ -136,18 +148,60 @@ namespace TempleRun.Player
 
         private void Turn(float turnValue, Vector3 turnPosition)
         {
-            Vector3 tempPlayerPosition = new Vector3(turnPosition.x, transform.position.y, turnPosition.z);
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, 0.1f, turnLayer);
+            if (hitColliders.Length == 0) return;
 
-            accumulatedDistance += Vector3.Distance(lastTurnPosition, tempPlayerPosition);
+            Tile tile = hitColliders[0].transform.parent.GetComponent<Tile>();
+
+            Quaternion newRotation = transform.rotation * Quaternion.Euler(0, 90 * turnValue, 0);
+            Vector3 newRight = newRotation * Vector3.right;
+
+            // Pick correct exit point based on tile type and turn direction
+            Vector3 centerLane;
+            if (tile.type == TileType.SIDEWAYS)
+            {
+                centerLane = turnValue < 0 ?
+                    tile.exitPointLeft.position :
+                    tile.exitPointRight.position;
+            }
+            else
+            {
+                centerLane = tile.exitPoint.position;
+            }
+
+            Vector3 lane0 = centerLane - newRight * laneDistance;
+            Vector3 lane1 = centerLane;
+            Vector3 lane2 = centerLane + newRight * laneDistance;
+
+            Vector3[] lanes = new Vector3[] { lane0, lane1, lane2 };
+
+            int closestLane = 1;
+            float closestDistance = float.MaxValue;
+
+            for (int i = 0; i < lanes.Length; i++)
+            {
+                float dist = Vector3.Distance(
+                    new Vector3(transform.position.x, 0f, transform.position.z),
+                    new Vector3(lanes[i].x, 0f, lanes[i].z)
+                );
+                if (dist < closestDistance)
+                {
+                    closestDistance = dist;
+                    closestLane = i;
+                }
+            }
+
+            desiredLane = closestLane;
+
+            Vector3 pivotPos = new Vector3(turnPosition.x, transform.position.y, turnPosition.z);
+            accumulatedDistance += Vector3.Distance(lastTurnPosition, pivotPos);
 
             controller.enabled = false;
-            transform.position = tempPlayerPosition;
+            transform.position = pivotPos;
             controller.enabled = true;
 
-            Quaternion targetRotation = transform.rotation * Quaternion.Euler(0, 90 * turnValue, 0);
-            transform.rotation = targetRotation;
+            transform.rotation = newRotation;
             movementDirection = transform.forward.normalized;
-
             lastTurnPosition = transform.position;
         }
 
@@ -188,6 +242,11 @@ namespace TempleRun.Player
             {
                 GameOver();
                 return;
+            }
+
+            if (laneChangeCooldown > 0f)
+            {
+                laneChangeCooldown -= Time.deltaTime;
             }
 
             // 1. Calculate standard forward movement

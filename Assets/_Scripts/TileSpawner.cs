@@ -18,7 +18,7 @@ namespace TempleRun
         private List<GameObject> turnTiles;
         [SerializeField]
         private List<GameObject> obstacles;
-
+        private float laneDistance = 2.5f;
         private Vector3 currentTileLocation = Vector3.zero;
         private Vector3 currentTileDirection = Vector3.forward;
         private GameObject prevTile;
@@ -52,16 +52,15 @@ namespace TempleRun
         {
             Quaternion newTileRotation = tile.gameObject.transform.rotation * Quaternion.LookRotation(currentTileDirection, Vector3.up);
 
-            prevTile = GameObject.Instantiate(tile.gameObject, currentTileLocation, newTileRotation);
+            Vector3 entryOffset = newTileRotation * tile.entryPoint.localPosition;
+            Vector3 spawnPos = currentTileLocation - entryOffset;
+
+            prevTile = GameObject.Instantiate(tile.gameObject, spawnPos, newTileRotation);
             currentTiles.Add(prevTile);
 
             if (spawnObstacle) SpawnObstacle();
 
-            // (3,4,5) * (0,0,1) => (0,0,5)
-            if (tile.type == TileType.STRAIGHT)
-            {
-                currentTileLocation += Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size, currentTileDirection);
-            }
+            currentTileLocation = prevTile.transform.position + newTileRotation * tile.exitPoint.localPosition;
         }
 
         private void DeletePreviousTiles()
@@ -86,17 +85,16 @@ namespace TempleRun
             currentTileDirection = direction;
             DeletePreviousTiles();
 
-            Vector3 tilePlacementScale;
-            if (prevTile.GetComponent<Tile>().type == TileType.SIDEWAYS)
+            Tile prevTileComponent = prevTile.GetComponent<Tile>();
+            if (prevTileComponent.type == TileType.SIDEWAYS)
             {
-                tilePlacementScale = Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size / 2 + (Vector3.one * startingTile.GetComponent<Renderer>().bounds.size.z / 2), currentTileDirection);
-            }
-            else
-            {
-                tilePlacementScale = Vector3.Scale(prevTile.GetComponent<Renderer>().bounds.size - (Vector3.one * 2) + (Vector3.one * startingTile.GetComponent<Renderer>().bounds.size.z / 2), currentTileDirection);
-            }
+                float cross = Vector3.Cross(Vector3.forward, direction).y;
+                Transform chosenExit = cross < 0 ?
+                prevTileComponent.exitPointLeft :
+                prevTileComponent.exitPointRight;
 
-            currentTileLocation += tilePlacementScale;
+                currentTileLocation = prevTile.transform.position + prevTile.transform.rotation * chosenExit.localPosition;
+            }
 
             int currenPathLength = Random.Range(minimumStraightTiles, maximumStraightTiles);
             for (int i = 0; i < currenPathLength; ++i)
@@ -116,7 +114,16 @@ namespace TempleRun
 
             Quaternion newObjectRotation = obstaclePrefab.transform.rotation * Quaternion.LookRotation(currentTileDirection, Vector3.up);
 
-            GameObject obstacle = Instantiate(obstaclePrefab, currentTileLocation, newObjectRotation);
+            int randomLane = Random.Range(0, 3);
+
+            Vector3 rightDirection = Vector3.Cross(Vector3.up, currentTileDirection).normalized;
+
+            float laneOffset = (randomLane - 1) * laneDistance;
+
+            Vector3 spawnPosition = currentTileLocation + (rightDirection * laneOffset);
+
+            GameObject obstacle = Instantiate(obstaclePrefab, spawnPosition, newObjectRotation);
+
             currentObstacles.Add(obstacle);
         }
 
