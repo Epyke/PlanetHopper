@@ -18,7 +18,10 @@ namespace TempleRun
         private List<GameObject> turnTiles;
         [SerializeField]
         private List<GameObject> obstacles;
+
+        [SerializeField] private float middleObstacleSafetyDistance = 15f;
         private float laneDistance = 2.5f;
+        private float lastMiddleObstacleDistance = -999f;
         private Vector3 currentTileLocation = Vector3.zero;
         private Vector3 currentTileDirection = Vector3.forward;
         private GameObject prevTile;
@@ -108,23 +111,46 @@ namespace TempleRun
 
         private void SpawnObstacle()
         {
-            if (Random.value > 0.5f) return;
+            if (Random.value > 0.8f) return;
 
             GameObject obstaclePrefab = SelectRandomGameObjectFromList(obstacles);
+            Obstacle obstacleData = obstaclePrefab.GetComponent<Obstacle>();
 
             Quaternion newObjectRotation = obstaclePrefab.transform.rotation * Quaternion.LookRotation(currentTileDirection, Vector3.up);
-
-            int randomLane = Random.Range(0, 3);
-
             Vector3 rightDirection = Vector3.Cross(Vector3.up, currentTileDirection).normalized;
 
-            float laneOffset = (randomLane - 1) * laneDistance;
+            if (obstacleData != null && obstacleData.spawnType == ObstacleSpawnType.MiddleOnly)
+            {
+                // Verifica se há distância suficiente desde o último obstáculo do meio
+                float distanceSinceLastMiddle = Vector3.Distance(currentTileLocation, new Vector3(lastMiddleObstacleDistance, currentTileLocation.y, currentTileLocation.z));
 
-            Vector3 spawnPosition = currentTileLocation + (rightDirection * laneOffset);
+                if (distanceSinceLastMiddle < middleObstacleSafetyDistance)
+                {
+                    return;
+                }
 
-            GameObject obstacle = Instantiate(obstaclePrefab, spawnPosition, newObjectRotation);
-
-            currentObstacles.Add(obstacle);
+                GameObject obstacle = Instantiate(obstaclePrefab, currentTileLocation, newObjectRotation);
+                currentObstacles.Add(obstacle);
+                lastMiddleObstacleDistance = currentTileLocation.x; // guarda a posição atual
+            }
+            else if (obstacleData != null && obstacleData.spawnType == ObstacleSpawnType.SidesOnly)
+            {
+                for (int lane = 0; lane <= 2; lane += 2)
+                {
+                    float laneOffset = (lane - 1) * laneDistance;
+                    Vector3 spawnPosition = currentTileLocation + (rightDirection * laneOffset);
+                    GameObject obstacle = Instantiate(obstaclePrefab, spawnPosition, newObjectRotation);
+                    currentObstacles.Add(obstacle);
+                }
+            }
+            else
+            {
+                int randomLane = Random.Range(0, 3);
+                float laneOffset = (randomLane - 1) * laneDistance;
+                Vector3 spawnPosition = currentTileLocation + (rightDirection * laneOffset);
+                GameObject obstacle = Instantiate(obstaclePrefab, spawnPosition, newObjectRotation);
+                currentObstacles.Add(obstacle);
+            }
         }
 
         private GameObject SelectRandomGameObjectFromList(List<GameObject> list)

@@ -21,7 +21,7 @@ namespace TempleRun.Player
         [SerializeField]
         private float jumpHeight = 1.0f;
         [SerializeField]
-        private float initialGravityValue = -9.81f;
+        private float initialGravityValue = -2.81f;
         [SerializeField]
         private LayerMask groundLayer;
         [SerializeField]
@@ -107,6 +107,7 @@ namespace TempleRun.Player
                 Vector3 targetDirection = Quaternion.AngleAxis(90 * context.ReadValue<float>(), Vector3.up) * movementDirection;
                 turnEvent.Invoke(targetDirection);
                 Turn(context.ReadValue<float>(), turnPosition.Value);
+                //
             }
             else
             {
@@ -130,7 +131,7 @@ namespace TempleRun.Player
 
         private Vector3? CheckTurn(float turnValue)
         {
-            Collider[] hitColliders = Physics.OverlapSphere(transform.position, 1f, turnLayer);
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, 1.5f, turnLayer);
             if (hitColliders.Length != 0)
             {
                 Tile tile = hitColliders[0].transform.parent.GetComponent<Tile>();
@@ -148,61 +149,20 @@ namespace TempleRun.Player
 
         private void Turn(float turnValue, Vector3 turnPosition)
         {
-            Collider[] hitColliders = Physics.OverlapSphere(transform.position, 0.1f, turnLayer);
-            if (hitColliders.Length == 0) return;
+            Vector3 tempPlayerPosition = new Vector3(turnPosition.x, transform.position.y, turnPosition.z);
 
-            Tile tile = hitColliders[0].transform.parent.GetComponent<Tile>();
-
-            Quaternion newRotation = transform.rotation * Quaternion.Euler(0, 90 * turnValue, 0);
-            Vector3 newRight = newRotation * Vector3.right;
-
-            // Pick correct exit point based on tile type and turn direction
-            Vector3 centerLane;
-            if (tile.type == TileType.SIDEWAYS)
-            {
-                centerLane = turnValue < 0 ?
-                    tile.exitPointLeft.position :
-                    tile.exitPointRight.position;
-            }
-            else
-            {
-                centerLane = tile.exitPoint.position;
-            }
-
-            Vector3 lane0 = centerLane - newRight * laneDistance;
-            Vector3 lane1 = centerLane;
-            Vector3 lane2 = centerLane + newRight * laneDistance;
-
-            Vector3[] lanes = new Vector3[] { lane0, lane1, lane2 };
-
-            int closestLane = 1;
-            float closestDistance = float.MaxValue;
-
-            for (int i = 0; i < lanes.Length; i++)
-            {
-                float dist = Vector3.Distance(
-                    new Vector3(transform.position.x, 0f, transform.position.z),
-                    new Vector3(lanes[i].x, 0f, lanes[i].z)
-                );
-                if (dist < closestDistance)
-                {
-                    closestDistance = dist;
-                    closestLane = i;
-                }
-            }
-
-            desiredLane = closestLane;
-
-            Vector3 pivotPos = new Vector3(turnPosition.x, transform.position.y, turnPosition.z);
-            accumulatedDistance += Vector3.Distance(lastTurnPosition, pivotPos);
+            accumulatedDistance += Vector3.Distance(lastTurnPosition, tempPlayerPosition);
 
             controller.enabled = false;
-            transform.position = pivotPos;
+            transform.position = tempPlayerPosition;
             controller.enabled = true;
 
-            transform.rotation = newRotation;
+            Quaternion targetRotation = transform.rotation * Quaternion.Euler(0, 90 * turnValue, 0);
+            transform.rotation = targetRotation;
             movementDirection = transform.forward.normalized;
+
             lastTurnPosition = transform.position;
+            desiredLane = 1;
         }
 
         private void PlayerSlide(InputAction.CallbackContext context)
@@ -321,6 +281,11 @@ namespace TempleRun.Player
         private void GameOver()
         {
             Debug.Log("Game Over");
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.StopMusic();
+                AudioManager.Instance.PlayOnce(AudioManager.Instance.Loose);
+            }
             gameOverEvent.Invoke((int)score);
             gameObject.SetActive(false);
         }

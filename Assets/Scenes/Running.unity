@@ -2089,8 +2089,8 @@ MonoBehaviour:
   maximumPlayerSpeed: 30
   playerSpeedIncreaseRate: 0.1
   playerSpeed: 0
-  jumpHeight: 1
-  initialGravityValue: -9.81
+  jumpHeight: 2
+  initialGravityValue: -2.81
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
@@ -3374,8 +3374,12 @@ MonoBehaviour:
   - {fileID: 3109650500946958552, guid: d1bc38dd49605864690bd11be3a4da2a, type: 3}
   - {fileID: 5635246150992067340, guid: 406d087854fa4cf4ba1b09b5571e98e9, type: 3}
   obstacles:
-  - {fileID: 7602181854675208719, guid: 155f450bb33de2c4f96d377dba80b194, type: 3}
-  - {fileID: 1887772381221813489, guid: 7acef6c3f1b5d6f45b162045d394132f, type: 3}
+  - {fileID: 7602181854675208719, guid: c4ce1e7b294e6994cb587600c7550c81, type: 3}
+  - {fileID: 7071470399255638223, guid: c73f395025fa98f4bbb932fb6286c7b3, type: 3}
+  - {fileID: 7602181854675208719, guid: ec3c33c78933e904fa5fa6b4e197767e, type: 3}
+  - {fileID: 7602181854675208719, guid: 4a1960b2971ce4b4fbeb99e7c4ba8bba, type: 3}
+  - {fileID: 7602181854675208719, guid: 0990b925eb6e6e04a92213272920d027, type: 3}
+  middleObstacleSafetyDistance: 15
 --- !u!1 &1966073593
 GameObject:
   m_ObjectHideFlags: 0

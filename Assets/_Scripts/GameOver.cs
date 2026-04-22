@@ -107,14 +107,22 @@ public class GameOver : MonoBehaviour
     {
 
     }
-    
+
     public void ReloadScene()
     {
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayMusic(AudioManager.Instance.gameMusic);
+        }
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void LoadMainMenu()
     {
-        SceneManager.LoadScene("MainMenu"); 
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayMusic(AudioManager.Instance.menuMusic);
+        }
+        SceneManager.LoadScene("MainMenu");
     }
 }
