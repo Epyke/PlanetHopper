@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine.InputSystem;
 using UnityEngine.Events;
 using UnityEditor.ShaderKeywordFilter;
+using LootLocker.Extension.DataTypes;
 namespace TempleRun.Player
 {
 
@@ -20,7 +21,7 @@ namespace TempleRun.Player
         [SerializeField]
         private float jumpHeight = 1.0f;
         [SerializeField]
-        private float initialGravityValue = -9.81f;
+        private float initialGravityValue = -2.81f;
         [SerializeField]
         private LayerMask groundLayer;
         [SerializeField]
@@ -37,10 +38,14 @@ namespace TempleRun.Player
         private Animator animator;
         [SerializeField]
         private LayerMask obstacleLayer;
-        [SerializeField]
-        private float scoreMultiplier = 10f;
+        //[SerializeField]
+        //private float scoreMultiplier = 10f;
         [SerializeField]
         private Transform characterMesh;
+        [SerializeField]
+        private float laneChangeDebounceDuration = 0.2f;
+        private float laneChangeCooldown = 0f;
+
         private float gravity;
         private Vector3 movementDirection = Vector3.forward;
         private Vector3 playerVelocity;
@@ -53,7 +58,10 @@ namespace TempleRun.Player
         private bool sliding = false;
         private int slidingAnimationId;
         private float score = 0;
-
+        private Vector3 lastTurnPosition;
+        private float accumulatedDistance = 0f;
+        public float laneDistance = 4f; // Distance between each lane
+        private int desiredLane = 1;
         private void Awake()
         {
             playerInput = GetComponent<PlayerInput>();
@@ -83,24 +91,47 @@ namespace TempleRun.Player
         {
             playerSpeed = initialPlayerSpeed;
             gravity = initialGravityValue;
+            lastTurnPosition = transform.position;
+            accumulatedDistance = 0f;
         }
 
         private void PlayerTurn(InputAction.CallbackContext context)
         {
+            float swipeDirection = context.ReadValue<float>();
             Vector3? turnPosition = CheckTurn(context.ReadValue<float>());
-            if (!turnPosition.HasValue)
+
+            if (turnPosition.HasValue)
             {
-                GameOver();
-                return;
+                if (!isGrounded()) return;
+
+                Vector3 targetDirection = Quaternion.AngleAxis(90 * context.ReadValue<float>(), Vector3.up) * movementDirection;
+                turnEvent.Invoke(targetDirection);
+                Turn(context.ReadValue<float>(), turnPosition.Value);
+                //
             }
-            Vector3 targetDirection = Quaternion.AngleAxis(90 * context.ReadValue<float>(), Vector3.up) * movementDirection;
-            turnEvent.Invoke(targetDirection);
-            Turn(context.ReadValue<float>(), turnPosition.Value);
+            else
+            {
+                if (sliding) return;
+
+                if (laneChangeCooldown > 0f) return;
+
+                if (swipeDirection < 0)
+                {
+                    desiredLane--;
+                }
+                else if (swipeDirection > 0)
+                {
+                    desiredLane++;
+                }
+
+                desiredLane = Mathf.Clamp(desiredLane, 0, 2);
+                laneChangeCooldown = laneChangeDebounceDuration;
+            }
         }
 
         private Vector3? CheckTurn(float turnValue)
         {
-            Collider[] hitColliders = Physics.OverlapSphere(transform.position, .1f, turnLayer);
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, 1.5f, turnLayer);
             if (hitColliders.Length != 0)
             {
                 Tile tile = hitColliders[0].transform.parent.GetComponent<Tile>();
@@ -119,6 +150,9 @@ namespace TempleRun.Player
         private void Turn(float turnValue, Vector3 turnPosition)
         {
             Vector3 tempPlayerPosition = new Vector3(turnPosition.x, transform.position.y, turnPosition.z);
+
+            accumulatedDistance += Vector3.Distance(lastTurnPosition, tempPlayerPosition);
+
             controller.enabled = false;
             transform.position = tempPlayerPosition;
             controller.enabled = true;
@@ -126,6 +160,9 @@ namespace TempleRun.Player
             Quaternion targetRotation = transform.rotation * Quaternion.Euler(0, 90 * turnValue, 0);
             transform.rotation = targetRotation;
             movementDirection = transform.forward.normalized;
+
+            lastTurnPosition = transform.position;
+            desiredLane = 1;
         }
 
         private void PlayerSlide(InputAction.CallbackContext context)
@@ -167,13 +204,39 @@ namespace TempleRun.Player
                 return;
             }
 
+            if (laneChangeCooldown > 0f)
+            {
+                laneChangeCooldown -= Time.deltaTime;
+            }
+
+            // 1. Calculate standard forward movement
+            Vector3 forwardMove = transform.forward * playerSpeed * Time.deltaTime;
+
+            // A much simpler way for your specific character controller setup:
+            // Determine what the target offset should be (-2.5, 0, or 2.5)
+            float targetOffset = (desiredLane - 1) * laneDistance;
+
+            // Find our current offset from the center of the path
+            // We use Vector3.Dot to find how far we are along our local "Right" axis
+            float currentOffset = Vector3.Dot(transform.position - lastTurnPosition, transform.right);
+
+            // Calculate how much we need to move sideways this frame to get to the target lane smoothly
+            float laneMoveDelta = (targetOffset - currentOffset) * 10f * Time.deltaTime;
+            Vector3 sideMove = transform.right * laneMoveDelta;
+
+            // 3. Combine forward movement, side movement, and gravity
+            Vector3 finalMovement = forwardMove + sideMove + (Vector3.up * playerVelocity.y * Time.deltaTime);
+
             // Score
-            score += scoreMultiplier * Time.deltaTime;
+            //score += scoreMultiplier * Time.deltaTime;
+
+            //New score system
+            score = accumulatedDistance + Vector3.Distance(lastTurnPosition, transform.position);
             scoreUpdateEvent.Invoke((int)score);
 
             animator.SetBool("isGrounded", isGrounded());
 
-            controller.Move(transform.forward * playerSpeed * Time.deltaTime);
+            controller.Move(finalMovement);
 
             if (isGrounded() && playerVelocity.y < 0)
             {
@@ -181,7 +244,7 @@ namespace TempleRun.Player
             }
 
             playerVelocity.y += gravity * Time.deltaTime;
-            controller.Move(playerVelocity * Time.deltaTime);
+            //controller.Move(playerVelocity * Time.deltaTime);
 
             if (playerSpeed < maximumPlayerSpeed)
             {
@@ -218,6 +281,11 @@ namespace TempleRun.Player
         private void GameOver()
         {
             Debug.Log("Game Over");
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.StopMusic();
+                AudioManager.Instance.PlayOnce(AudioManager.Instance.Loose);
+            }
             gameOverEvent.Invoke((int)score);
             gameObject.SetActive(false);
         }

@@ -20,12 +20,14 @@ public class MainMenuManager : MonoBehaviour
     // This function will be called by the Start button
     public void StartGame()
     {
-        // Loads your game scene. 
-        // Make sure the name matches your game scene exactly!
-        SceneManager.LoadScene("Running"); 
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayMusic(AudioManager.Instance.gameMusic);
+        }
+
+        SceneManager.LoadScene("Running");
     }
 
-    // Optional: A function to quit the game
     public void QuitGame()
     {
         Debug.Log("Game Exited!");
@@ -34,7 +36,7 @@ public class MainMenuManager : MonoBehaviour
 
     //FUNÇÕES DA LOJA
 
-public void OpenShop()
+    public void OpenShop()
     {
         shopPanel.SetActive(true); // Mostra a loja
         jamesManequim.SetActive(true); // LIGA o boneco 3D!
@@ -43,11 +45,10 @@ public void OpenShop()
         int myCoins = EconomyManager.Instance.GetCoins();
         coinsText.text = "Coins: " + myCoins.ToString();
     }
+    
     public void CloseShop()
     {
         shopPanel.SetActive(false); // Esconde a loja
         jamesManequim.SetActive(false); // DESLIGA o boneco 3D!
     }
-
-
 }
