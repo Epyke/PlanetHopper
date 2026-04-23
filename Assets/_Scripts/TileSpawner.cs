@@ -19,6 +19,10 @@ namespace TempleRun
         [SerializeField]
         private List<GameObject> obstacles;
 
+        [SerializeField]
+        private GameObject coinPrefab;
+        private List<GameObject> currentCoins = new List<GameObject>();
+
         private Vector3 currentTileLocation = Vector3.zero;
         private Vector3 currentTileDirection = Vector3.forward;
         private GameObject prevTile;
@@ -57,6 +61,11 @@ namespace TempleRun
 
             if (spawnObstacle) SpawnObstacle();
 
+            if (tile.type == TileType.STRAIGHT && !spawnObstacle)
+            {
+                SpawnCoin(); 
+            }
+            
             // (3,4,5) * (0,0,1) => (0,0,5)
             if (tile.type == TileType.STRAIGHT)
             {
@@ -78,6 +87,13 @@ namespace TempleRun
                 GameObject obstacle = currentObstacles[0];
                 currentObstacles.RemoveAt(0);
                 Destroy(obstacle);
+            }
+
+            while (currentCoins.Count != 0)
+            {
+                GameObject coin = currentCoins[0];
+                currentCoins.RemoveAt(0);
+                if(coin != null) Destroy(coin); // Destrói apenas se não tiver sido apanhada
             }
         }
 
@@ -118,6 +134,18 @@ namespace TempleRun
 
             GameObject obstacle = Instantiate(obstaclePrefab, currentTileLocation, newObjectRotation);
             currentObstacles.Add(obstacle);
+        }
+
+      private void SpawnCoin()
+        {
+            // A moeda tem 70% de probabilidade de aparecer neste pedaço de chão
+            if (Random.value > 0.7f) return; 
+
+            // Dá uma pequena variação na altura para não ficarem coladas ao chão
+            Vector3 coinPosition = currentTileLocation + new Vector3(0, 0.5f, 0);
+
+            GameObject coin = Instantiate(coinPrefab, coinPosition, Quaternion.identity);
+            currentCoins.Add(coin);
         }
 
         private GameObject SelectRandomGameObjectFromList(List<GameObject> list)

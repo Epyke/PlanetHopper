@@ -19,13 +19,20 @@ public class GameOver : MonoBehaviour
     private int leaderboardTopCount = 5;
     private int score = 0;
     private string leaderboardID = "33678";
-    public void StopGame(int score)
+  public void StopGame(int score)
     {
         this.score = score;
         scoreText.text = score.ToString();
+
+        // Quando o jogo para, deposita as moedas que o James apanhou 
+        if (HUDManager.Instance != null)
+        {
+            HUDManager.Instance.DepositarNoBanco();
+        }
+       
+
         GetLeaderboard();
     }
-
     public void SubmitScore()
     {
         StartCoroutine(SubmitScoreToLeaderboard());
