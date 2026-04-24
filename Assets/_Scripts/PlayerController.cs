@@ -107,7 +107,6 @@ namespace TempleRun.Player
                 Vector3 targetDirection = Quaternion.AngleAxis(90 * context.ReadValue<float>(), Vector3.up) * movementDirection;
                 turnEvent.Invoke(targetDirection);
                 Turn(context.ReadValue<float>(), turnPosition.Value);
-                //
             }
             else
             {
@@ -209,28 +208,20 @@ namespace TempleRun.Player
                 laneChangeCooldown -= Time.deltaTime;
             }
 
-            // 1. Calculate standard forward movement
             Vector3 forwardMove = transform.forward * playerSpeed * Time.deltaTime;
 
-            // A much simpler way for your specific character controller setup:
-            // Determine what the target offset should be (-2.5, 0, or 2.5)
             float targetOffset = (desiredLane - 1) * laneDistance;
 
-            // Find our current offset from the center of the path
-            // We use Vector3.Dot to find how far we are along our local "Right" axis
             float currentOffset = Vector3.Dot(transform.position - lastTurnPosition, transform.right);
 
-            // Calculate how much we need to move sideways this frame to get to the target lane smoothly
             float laneMoveDelta = (targetOffset - currentOffset) * 10f * Time.deltaTime;
             Vector3 sideMove = transform.right * laneMoveDelta;
 
-            // 3. Combine forward movement, side movement, and gravity
             Vector3 finalMovement = forwardMove + sideMove + (Vector3.up * playerVelocity.y * Time.deltaTime);
 
             // Score
             //score += scoreMultiplier * Time.deltaTime;
 
-            //New score system
             score = accumulatedDistance + Vector3.Distance(lastTurnPosition, transform.position);
             scoreUpdateEvent.Invoke((int)score);
 

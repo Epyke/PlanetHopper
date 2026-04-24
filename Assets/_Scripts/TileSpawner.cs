@@ -19,16 +19,9 @@ namespace TempleRun
         [SerializeField]
         private List<GameObject> obstacles;
 
-        // Variáveis das Moedas (A tua parte)
-        [SerializeField]
-        private GameObject coinPrefab;
-        private List<GameObject> currentCoins = new List<GameObject>();
-
-        // Variáveis das 3 Pistas (A parte do Henrique)
         [SerializeField] private float middleObstacleSafetyDistance = 15f;
         private float laneDistance = 2.5f;
         private float lastMiddleObstacleDistance = -999f;
-
         private Vector3 currentTileLocation = Vector3.zero;
         private Vector3 currentTileDirection = Vector3.forward;
         private GameObject prevTile;
@@ -60,7 +53,9 @@ namespace TempleRun
 
         private void SpawnTile(Tile tile, bool spawnObstacle)
         {
+
             Quaternion newTileRotation = tile.gameObject.transform.rotation * Quaternion.LookRotation(currentTileDirection, Vector3.up);
+
             Vector3 entryOffset = newTileRotation * tile.entryPoint.localPosition;
             Vector3 spawnPos = currentTileLocation - entryOffset;
 
@@ -69,14 +64,11 @@ namespace TempleRun
 
             if (spawnObstacle) SpawnObstacle();
 
-            // A tua lógica: Spawnar moedas nas retas vazias
-            if (tile.type == TileType.STRAIGHT && !spawnObstacle)
-            {
-                SpawnCoin();
-            }
 
-            // A lógica do Henrique: Cálculo corrigido da próxima posição
-            currentTileLocation = prevTile.transform.position + newTileRotation * tile.exitPoint.localPosition;
+            if (tile.exitPoint)
+            {
+                currentTileLocation = prevTile.transform.position + newTileRotation * tile.exitPoint.localPosition;
+            }
         }
 
         private void DeletePreviousTiles()
@@ -94,13 +86,6 @@ namespace TempleRun
                 currentObstacles.RemoveAt(0);
                 Destroy(obstacle);
             }
-
-            while (currentCoins.Count != 0)
-            {
-                GameObject coin = currentCoins[0];
-                currentCoins.RemoveAt(0);
-                if(coin != null) Destroy(coin); // Destrói apenas se não tiver sido apanhada
-            }
         }
 
         public void AddNewDirection(Vector3 direction)
@@ -112,17 +97,20 @@ namespace TempleRun
             if (prevTileComponent.type == TileType.SIDEWAYS)
             {
                 float cross = Vector3.Cross(Vector3.forward, direction).y;
-                Transform chosenExit = cross < 0 ?
-                prevTileComponent.exitPointLeft :
-                prevTileComponent.exitPointRight;
-                currentTileLocation = prevTile.transform.position + prevTile.transform.rotation * chosenExit.localPosition;
+
+                Transform chosenExit = cross > 0 ?
+                    prevTileComponent.exitPointLeft :
+                    prevTileComponent.exitPointRight;
+
+                currentTileLocation = prevTile.transform.position
+                    + prevTile.transform.rotation * chosenExit.localPosition;
             }
 
             int currenPathLength = Random.Range(minimumStraightTiles, maximumStraightTiles);
             for (int i = 0; i < currenPathLength; ++i)
             {
-
-                SpawnTile(startingTile.GetComponent<Tile>(), (i == 0 | i == currenPathLength - 1) ? false : true);
+                SpawnTile(startingTile.GetComponent<Tile>(),
+                    (i == 0 || i == currenPathLength - 1) ? false : true);
             }
 
             SpawnTile(SelectRandomGameObjectFromList(turnTiles).GetComponent<Tile>(), false);
@@ -131,16 +119,17 @@ namespace TempleRun
         private void SpawnObstacle()
         {
             if (Random.value > 0.8f) return;
+
             GameObject obstaclePrefab = SelectRandomGameObjectFromList(obstacles);
             Obstacle obstacleData = obstaclePrefab.GetComponent<Obstacle>();
 
             Quaternion newObjectRotation = obstaclePrefab.transform.rotation * Quaternion.LookRotation(currentTileDirection, Vector3.up);
             Vector3 rightDirection = Vector3.Cross(Vector3.up, currentTileDirection).normalized;
-            
+
             if (obstacleData != null && obstacleData.spawnType == ObstacleSpawnType.MiddleOnly)
             {
-                // Verifica se há distância suficiente desde o último obstáculo do meio
                 float distanceSinceLastMiddle = Vector3.Distance(currentTileLocation, new Vector3(lastMiddleObstacleDistance, currentTileLocation.y, currentTileLocation.z));
+
                 if (distanceSinceLastMiddle < middleObstacleSafetyDistance)
                 {
                     return;
@@ -148,7 +137,7 @@ namespace TempleRun
 
                 GameObject obstacle = Instantiate(obstaclePrefab, currentTileLocation, newObjectRotation);
                 currentObstacles.Add(obstacle);
-                lastMiddleObstacleDistance = currentTileLocation.x; // guarda a posição atual
+                lastMiddleObstacleDistance = currentTileLocation.x;
             }
             else if (obstacleData != null && obstacleData.spawnType == ObstacleSpawnType.SidesOnly)
             {
@@ -170,16 +159,6 @@ namespace TempleRun
             }
         }
 
-        private void SpawnCoin()
-        {
-            // A moeda tem 70% de probabilidade de aparecer neste pedaço de chão
-            if (Random.value > 0.7f) return;
-            
-            Vector3 coinPosition = currentTileLocation + new Vector3(0, 0.5f, 0);
-            GameObject coin = Instantiate(coinPrefab, coinPosition, Quaternion.identity);
-            currentCoins.Add(coin);
-        }
-
         private GameObject SelectRandomGameObjectFromList(List<GameObject> list)
         {
             if (list.Count == 0) return null;
@@ -187,3 +166,4 @@ namespace TempleRun
         }
     }
 }
+

@@ -4,12 +4,12 @@ Um endless runner onde encarnas o primeiro astronauta a pisar a lua e tens de fu
 
 ---
 
-## 👥 Elementos do Grupo
+## Elementos do Grupo
 
-| Nome | Número |
-|---|---|
-| Henrique Fernandes | 33393 |
-| Diogo Gomes | - |
+| Nome               | Número |
+| ------------------ | ------ |
+| Henrique Fernandes | 33393  |
+| Diogo Gomes        | 33369  |
 
 ---
 
@@ -30,7 +30,6 @@ Um endless runner onde encarnas o primeiro astronauta a pisar a lua e tens de fu
 - **Dificuldade incremental** a velocidade do jogo aumenta progressivamente com o tempo jogado.
 - **Sistema de pontuação** baseado na distância percorrida.
 - **Leaderboard online** integrado via serviço **LootLocker**, que sincroniza as pontuações num servidor remoto.
-- **Loja de personagens** com sistema de moedas e equipamento de skins.
 - **Música de fundo** distinta para o menu principal, durante o jogo e no ecrã de Game Over.
 - **Resolução adaptada para mobile** (rácio 16:9).
 
@@ -39,18 +38,20 @@ Um endless runner onde encarnas o primeiro astronauta a pisar a lua e tens de fu
 ## Jogabilidade
 
 ### Objetivo
+
 Percorre a maior distância possível sem colidir com obstáculos. Quanto mais longe chegares, maior será a tua pontuação no leaderboard.
 
 ### Controlos
 
-| Ação | Teclado | Teclas Alternativas |
-|---|---|---|
-| Mover para a esquerda | `A` | `←` (seta esquerda) |
-| Mover para a direita | `D` | `→` (seta direita) |
-| Saltar | `W` | `↑` (seta cima) |
-| Deslizar (*slide*) | `S` | `↓` (seta baixo) |
+| Ação                  | Teclado | Teclas Alternativas |
+| --------------------- | ------- | ------------------- |
+| Mover para a esquerda | `A`     | `←` (seta esquerda) |
+| Mover para a direita  | `D`     | `→` (seta direita)  |
+| Saltar                | `W`     | `↑` (seta cima)     |
+| Deslizar (_slide_)    | `S`     | `↓` (seta baixo)    |
 
 ### Regras
+
 - O jogo termina quando o astronauta colide com um obstáculo.
 - A velocidade aumenta ao longo do tempo, tornando o jogo progressivamente mais difícil.
 - A pontuação é calculada com base na distância percorrida.
@@ -71,23 +72,24 @@ As animações do astronauta foram criadas manualmente, o que envolveu a constru
 
 ### Modelos 3D
 
-| Asset | Fonte | Formato | Justificação |
-|---|---|---|---|
-| Muros / Rochas (obstáculos) | [Procedural Rocks Low Poly – Sketchfab](https://sketchfab.com/3d-models/procedural-rocks-low-poly-378ccb37411449a6a13033da40414b0c) | `.fbx` / `.glb` | Low poly adequado para um runner com geração procedural; baixo custo computacional. |
-| Pedras (obstáculos) | [Low Poly Rocks – Sketchfab](https://sketchfab.com/3d-models/low-poly-rocks-9823ec262054408dbe26f6ddb9c0406e) | `.fbx` / `.glb` | Estilo consistente com os muros; variedade visual nos obstáculos. |
-| Personagem (Astronauta) | [Astronaut – Sketchfab](https://sketchfab.com/3d-models/astronaut-23b856b4b6324d179bb340ee182a5e18) | `.fbx` / `.glb` | Modelo sem rig |
+| Asset                       | Fonte                                                                                                                               | Formato |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| Muros / Rochas (obstáculos) | [Procedural Rocks Low Poly – Sketchfab](https://sketchfab.com/3d-models/procedural-rocks-low-poly-378ccb37411449a6a13033da40414b0c) | `.glb`  |
+| Pedras (obstáculos)         | [Low Poly Rocks – Sketchfab](https://sketchfab.com/3d-models/low-poly-rocks-9823ec262054408dbe26f6ddb9c0406e)                       | `.glb`  |
+| Personagem (Astronauta)     | [Astronaut – Sketchfab](https://sketchfab.com/3d-models/astronaut-23b856b4b6324d179bb340ee182a5e18)                                 | `.fbx`  |
 
 ### Audio
 
-| Asset | Fonte | Utilização | Justificação |
-|---|---|---|---|
-| Música do Menu | [YouTube](https://www.youtube.com/watch?v=QmEpVIjWTw8) | Menu principal | Ambiente calmo e espacial para o ecrã inicial. |
-| Música em Jogo | [YouTube](https://www.youtube.com/watch?v=BS712Udp0YU) | Sessão de jogo | Ritmo acelerado que acompanha e intensifica a jogabilidade. |
-| Som de Game Over | [YouTube](https://www.youtube.com/watch?v=_asNhzXq72w) | Ecrã de Game Over | Feedback sonoro imediato e reconhecível para o fim da sessão. |
+| Asset            | Fonte                                                  | Utilização        | Justificação                      |
+| ---------------- | ------------------------------------------------------ | ----------------- | --------------------------------- |
+| Música do Menu   | [YouTube](https://www.youtube.com/watch?v=QmEpVIjWTw8) | Menu principal    | Musica calma para o ecrã inicial. |
+| Música em Jogo   | [YouTube](https://www.youtube.com/watch?v=BS712Udp0YU) | Sessão de jogo    | Ritmo acelerado.                  |
+| Som de Game Over | [YouTube](https://www.youtube.com/watch?v=_asNhzXq72w) | Ecrã de Game Over | Reconhecível para o game over.    |
 
 Os ficheiros de audio foram descarregados em **.mp3** e importados como `AudioClip` no Unity.
 
 ### Resolução / Aspect Ratio
+
 O jogo foi desenvolvido com resolução **16:9**, orientada para dispositivos móveis.
 
 ---
@@ -95,3 +97,4 @@ O jogo foi desenvolvido com resolução **16:9**, orientada para dispositivos m�
 ## Observações e Lacunas
 
 - **OVNI não implementado:** A narrativa do jogo inclui um OVNI perseguidor, mas este inimigo não foi criado.
+- **Shop de acessórios não implementado:** Problemas com o github a ultima da hora
